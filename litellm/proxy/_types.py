@@ -247,6 +247,7 @@ class LiteLLMRoutes(enum.Enum):
         "/openai/deployments/{model}/chat/completions",
         "/chat/completions",
         "/v1/chat/completions",
+        "/cursor/chat/completions",
         # completions
         "/engines/{model}/completions",
         "/openai/deployments/{model}/completions",
@@ -417,6 +418,13 @@ class LiteLLMRoutes(enum.Enum):
         "/models/{model_name}:countTokens",
         "/models/{model_name}:generateContent",
         "/models/{model_name}:streamGenerateContent",
+        # Google Interactions API
+        "/interactions",
+        "/v1beta/interactions",
+        "/interactions/{interaction_id}",
+        "/v1beta/interactions/{interaction_id}",
+        "/interactions/{interaction_id}/cancel",
+        "/v1beta/interactions/{interaction_id}/cancel",
     ]
 
     apply_guardrail_routes = [
@@ -1070,6 +1078,8 @@ class UpdateMCPServerRequest(LiteLLMPydanticObjectBase):
     url: Optional[str] = None
     mcp_info: Optional[MCPInfo] = None
     mcp_access_groups: List[str] = Field(default_factory=list)
+    allowed_tools: Optional[List[str]] = None
+    extra_headers: Optional[List[str]] = None
     static_headers: Optional[Dict[str, str]] = None
     # Stdio-specific fields
     command: Optional[str] = None
@@ -1383,6 +1393,7 @@ class NewTeamRequest(TeamBase):
     prompts: Optional[List[str]] = None
     object_permission: Optional[LiteLLM_ObjectPermissionBase] = None
     allowed_passthrough_routes: Optional[list] = None
+    secret_manager_settings: Optional[dict] = None
     model_rpm_limit: Optional[Dict[str, int]] = None
     rpm_limit_type: Optional[
         Literal["guaranteed_throughput", "best_effort_throughput"]
@@ -1449,6 +1460,7 @@ class UpdateTeamRequest(LiteLLMPydanticObjectBase):
     team_member_tpm_limit: Optional[int] = None
     team_member_key_duration: Optional[str] = None
     allowed_passthrough_routes: Optional[list] = None
+    secret_manager_settings: Optional[dict] = None
     model_rpm_limit: Optional[Dict[str, int]] = None
     model_tpm_limit: Optional[Dict[str, int]] = None
     allowed_vector_store_indexes: Optional[List[AllowedVectorStoreIndexItem]] = None
@@ -2661,6 +2673,9 @@ class SpendLogsMetadata(TypedDict):
     cold_storage_object_key: Optional[
         str
     ]  # S3/GCS object key for cold storage retrieval
+    litellm_overhead_time_ms: Optional[
+        float
+    ]  # LiteLLM overhead time in milliseconds
 
 
 class SpendLogsPayload(TypedDict):
@@ -3336,6 +3351,7 @@ LiteLLM_ManagementEndpoint_MetadataFields_Premium = [
     "team_member_key_duration",
     "prompts",
     "logging",
+    "secret_manager_settings",
     "allowed_passthrough_routes",
 ]
 
@@ -3685,6 +3701,8 @@ class LiteLLM_ManagedFileTable(LiteLLMPydanticObjectBase):
     flat_model_file_ids: List[str]
     created_by: Optional[str]
     updated_by: Optional[str]
+    storage_backend: Optional[str] = None  
+    storage_url: Optional[str] = None 
 
 
 class LiteLLM_ManagedObjectTable(LiteLLMPydanticObjectBase):
